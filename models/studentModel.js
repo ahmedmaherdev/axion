@@ -3,12 +3,12 @@ const { Schema, model, Types } = require("mongoose");
 const studentSchema = new Schema(
   {
     school: {
-      type: Types.ObjectId(),
+      type: Types.ObjectId,
       ref: "School",
     },
 
     classrooms: {
-      type: Types.ObjectId(),
+      type: Types.ObjectId,
       ref: "Classroom",
     },
   },

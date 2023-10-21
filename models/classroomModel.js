@@ -7,13 +7,13 @@ const classroomSchema = new Schema(
     },
 
     school: {
-      type: Types.ObjectId(),
+      type: Types.ObjectId,
       ref: "School",
     },
 
     students: [
       {
-        type: Types.ObjectId(),
+        type: Types.ObjectId,
         ref: "Student",
       },
     ],
