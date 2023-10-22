@@ -21,4 +21,19 @@ const classroomSchema = new Schema(
   { timestamps: true }
 );
 
+classroomSchema.pre(/^find/, function (next) {
+  this.populate({
+    path: "school",
+    select: {
+      name: 1,
+    },
+  }).populate({
+    path: "students",
+    select: {
+      name: 1,
+      photo: 1,
+    },
+  });
+});
+
 module.exports = model("Classroom", classroomSchema);

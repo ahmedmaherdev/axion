@@ -1,6 +1,7 @@
 const { Schema, model, Types } = require("mongoose");
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
+const validator = require("validator");
 
 const userSchema = new Schema(
   {
@@ -28,6 +29,7 @@ const userSchema = new Schema(
       minLength: [5, "username must be more than 5 characters"],
       maxLength: [20, "username must be less than 20 characters"],
       trim: true,
+      unique: true,
     },
 
     role: {
@@ -80,7 +82,7 @@ const userSchema = new Schema(
     },
 
     student: {
-      type: Types.ObjectId(),
+      type: Types.ObjectId,
       ref: "Student",
     },
   },
@@ -102,6 +104,11 @@ userSchema.pre("save", async function (next) {
 userSchema.pre(/^find/, function (next) {
   this.find({
     isActive: { $ne: false },
+  }).populate({
+    path: "student",
+    select: {
+      school: 1,
+    },
   });
   next();
 });
