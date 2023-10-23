@@ -14,10 +14,17 @@ module.exports = class School {
     this.mongomodels = mongomodels;
     this.tokenManager = managers.token;
     this.schoolsCollection = "schools";
-    this.SchoolExposed = ["createSchool"];
+    this.httpExposed = [
+      "getAllSchools",
+      "getSchool",
+      "createSchool",
+      "updateSchool",
+      "deleteSchool",
+    ];
+    this.httpMethods = ["get", "get", "post", "patch", "delete"];
   }
 
-  async findAllSchool({}) {
+  async getAllSchools({}) {
     // Creation Logic
     let schools = await this.mongomodels.school.find();
 
@@ -27,7 +34,7 @@ module.exports = class School {
     };
   }
 
-  async findSchool({ _id }) {
+  async getSchool({ _id }) {
     // Creation Logic
     let school = await this.mongomodels.school.findById(_id);
 
@@ -49,7 +56,7 @@ module.exports = class School {
 
     // Response
     return {
-      School: createdSchool,
+      school: createdSchool,
     };
   }
 
@@ -61,7 +68,13 @@ module.exports = class School {
     if (result) return result;
 
     // Creation Logic
-    let updatedSchool = await this.mongomodels.school.update(_id, school);
+    let updatedSchool = await this.mongomodels.school.findOneAndUpdate(
+      { _id },
+      school,
+      {
+        new: true,
+      }
+    );
 
     // Response
     return {

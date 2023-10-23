@@ -30,6 +30,7 @@ const userSchema = new Schema(
       maxLength: [20, "username must be less than 20 characters"],
       trim: true,
       unique: true,
+      select: false,
     },
 
     role: {
@@ -104,12 +105,7 @@ userSchema.pre("save", async function (next) {
 userSchema.pre(/^find/, function (next) {
   this.find({
     isActive: { $ne: false },
-  }).populate({
-    path: "student",
-    select: {
-      school: 1,
-    },
-  });
+  }).populate("student");
   next();
 });
 

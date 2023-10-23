@@ -1,4 +1,4 @@
-module.exports = class School {
+module.exports = class Enrollment {
   constructor({
     utils,
     cache,
@@ -13,63 +13,42 @@ module.exports = class School {
     this.validators = validators;
     this.mongomodels = mongomodels;
     this.tokenManager = managers.token;
-    this.schoolsCollection = "schools";
-    this.SchoolExposed = ["createSchool"];
+    this.enrollmentsCollection = "enrollments";
+    this.httpExposed = ["createEnrollment", "deleteEnrollment"];
+    this.httpMethods = ["post", "delete"];
   }
 
-  async findAllSchool({}) {
-    // Creation Logic
-    let schools = await this.mongomodels.school.find();
-
-    // Response
-    return {
-      schools,
-    };
-  }
-
-  async findSchool({ _id }) {
-    // Creation Logic
-    let school = await this.mongomodels.school.findById(_id);
-
-    // Response
-    return {
-      school,
-    };
-  }
-
-  async createSchool({ name }) {
-    const school = { name };
+  async createEnrollment({ student, classroom }) {
+    const enrollment = { student, classroom };
 
     // Data validation
-    let result = await this.validators.school.createSchool(school);
+    let result = await this.validators.enrollment.createEnrollment(enrollment);
     if (result) return result;
 
+    const userData = await this.mongomodels.user.findById(student);
+    const classroomData = await this.mongomodels.classroom.findById(classroom);
+
+    if (!userData || !classroomData)
+      return new Error("Student or Classroom is not found.");
     // Creation Logic
-    let createdSchool = await this.mongomodels.school.create(school);
+    userData.student.classrooms.push(classroom);
+    classroomData.students.push(student);
+
+    await userData.student.save();
+    await classroomData.save();
+
+    let createdEnrollment = await this.mongomodels.enrollment.create(
+      enrollment
+    );
 
     // Response
     return {
-      School: createdSchool,
+      enrollment: createdEnrollment,
     };
   }
 
-  async updateSchool({ _id, name }) {
-    const school = { name };
-
-    // Data validation
-    let result = await this.validators.school.updateSchool(school);
-    if (result) return result;
-
-    // Creation Logic
-    let updatedSchool = await this.mongomodels.school.update(_id, school);
-
-    // Response
-    return {
-      school: updatedSchool,
-    };
-  }
-  async deleteSchool({ _id }) {
-    await this.mongomodels.school.deleteOne({ _id });
+  async deleteEnrollment({ _id }) {
+    await this.mongomodels.enrollment.deleteOne({ _id });
 
     return {};
   }

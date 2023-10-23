@@ -7,10 +7,12 @@ const studentSchema = new Schema(
       ref: "School",
     },
 
-    classrooms: {
-      type: Types.ObjectId,
-      ref: "Classroom",
-    },
+    classrooms: [
+      {
+        type: Types.ObjectId,
+        ref: "Classroom",
+      },
+    ],
   },
   { timestamps: true }
 );

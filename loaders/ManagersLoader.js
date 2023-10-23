@@ -13,6 +13,10 @@ const TokenManager = require("../managers/token/Token.manager");
 const SharkFin = require("../managers/shark_fin/SharkFin.manager");
 const TimeMachine = require("../managers/time_machine/TimeMachine.manager");
 const MongoLoader = require("./MongoLoader");
+const User = require("../managers/entities/user/User.manager");
+const School = require("../managers/entities/school/School.manager");
+const Classroom = require("../managers/entities/classroom/Classroom.manager");
+const Enrollment = require("../managers/entities/enrollment/Enrollment.manager");
 
 /**
  * load sharable modules
@@ -69,6 +73,48 @@ module.exports = class ManagersLoader {
       ...{ preStack: [/* '__token', */ "__device"] },
       ...this.injectable,
     });
+
+    // Custom managers
+    this.managers.user = new User({
+      utils,
+      cache: this.cache,
+      config: this.config,
+      cortex: this.cortex,
+      managers: this.managers,
+      validators: this.validators,
+      mongomodels: this.mongomodels,
+    });
+
+    this.managers.school = new School({
+      utils,
+      cache: this.cache,
+      config: this.config,
+      cortex: this.cortex,
+      managers: this.managers,
+      validators: this.validators,
+      mongomodels: this.mongomodels,
+    });
+
+    this.managers.classroom = new Classroom({
+      utils,
+      cache: this.cache,
+      config: this.config,
+      cortex: this.cortex,
+      managers: this.managers,
+      validators: this.validators,
+      mongomodels: this.mongomodels,
+    });
+
+    this.managers.enrollment = new Enrollment({
+      utils,
+      cache: this.cache,
+      config: this.config,
+      cortex: this.cortex,
+      managers: this.managers,
+      validators: this.validators,
+      mongomodels: this.mongomodels,
+    });
+
     this.managers.userApi = new ApiHandler({
       ...this.injectable,
       ...{ prop: "httpExposed" },

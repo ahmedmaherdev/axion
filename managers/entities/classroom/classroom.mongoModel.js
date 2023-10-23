@@ -22,18 +22,22 @@ const classroomSchema = new Schema(
 );
 
 classroomSchema.pre(/^find/, function (next) {
-  this.populate({
-    path: "school",
-    select: {
-      name: 1,
-    },
-  }).populate({
-    path: "students",
-    select: {
-      name: 1,
-      photo: 1,
-    },
-  });
+  this.find()
+    .populate({
+      path: "school",
+      select: {
+        name: 1,
+      },
+    })
+    .populate({
+      path: "students",
+      select: {
+        name: 1,
+        photo: 1,
+      },
+    });
+
+  next();
 });
 
 module.exports = model("Classroom", classroomSchema);

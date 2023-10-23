@@ -14,10 +14,18 @@ module.exports = class User {
     this.mongomodels = mongomodels;
     this.tokenManager = managers.token;
     this.usersCollection = "users";
-    this.userExposed = ["createUser"];
+    this.httpExposed = [
+      "getAllUsers",
+      "getUser",
+      "createStudent",
+      "createUser",
+      "updateUser",
+      "deleteUser",
+    ];
+    this.httpMethods = ["get", "get", "post", "post", "patch", "delete"];
   }
 
-  async findAllUser({ _id }) {
+  async getAllUsers({}) {
     // Creation Logic
     let users = await this.mongomodels.user.find();
 
@@ -27,7 +35,7 @@ module.exports = class User {
     };
   }
 
-  async findUser({ _id }) {
+  async getUser({ _id }) {
     // Creation Logic
     let user = await this.mongomodels.user.findById(_id);
 
@@ -37,8 +45,15 @@ module.exports = class User {
     };
   }
 
-  async createUser({ username, name, email, password, passwordConfirm }) {
-    const user = { username, name, email, password, passwordConfirm };
+  async createUser({ role, username, name, email, password, passwordConfirm }) {
+    const user = {
+      role,
+      username,
+      name,
+      email,
+      password,
+      passwordConfirm,
+    };
 
     // Data validation
     let result = await this.validators.user.createUser(user);
@@ -49,9 +64,50 @@ module.exports = class User {
 
     let longToken = this.tokenManager.genLongToken({
       userId: createdUser._id,
-      userKey: createdUser.key,
+      userKey: createdUser.email,
     });
 
+    createdUser.password = undefined;
+    createdUser.__v = undefined;
+    // Response
+    return {
+      user: createdUser,
+      longToken,
+    };
+  }
+
+  async createStudent({
+    username,
+    name,
+    email,
+    password,
+    passwordConfirm,
+    school,
+  }) {
+    const user = { username, name, email, password, passwordConfirm, school };
+
+    // Data validation
+    let result = await this.validators.user.createStudent(user);
+    if (result) return result;
+
+    // Creation Logic
+    let createdUser = await this.mongomodels.user.create(user);
+
+    let student = await this.mongomodels.student.create({
+      student: createdUser._id,
+      school,
+    });
+
+    createdUser.student = student._id;
+    await createdUser.save();
+
+    let longToken = this.tokenManager.genLongToken({
+      userId: createdUser._id,
+      userKey: createdUser.email,
+    });
+
+    createdUser.password = undefined;
+    createdUser.__v = undefined;
     // Response
     return {
       user: createdUser,
@@ -67,7 +123,13 @@ module.exports = class User {
     if (result) return result;
 
     // Creation Logic
-    let updateUser = await this.mongomodels.user.update(_id, user);
+    let updateUser = await this.mongomodels.user.findOneAndUpdate(
+      { _id },
+      user,
+      {
+        new: true,
+      }
+    );
 
     // Response
     return {

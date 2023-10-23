@@ -10,13 +10,13 @@ module.exports = {
       required: true,
     },
   ],
-  updateEnrollment: [
-    {
-      model: "classroom",
-    },
+  // updateEnrollment: [
+  //   {
+  //     model: "classroom",
+  //   },
 
-    {
-      model: "user",
-    },
-  ],
+  //   {
+  //     model: "user",
+  //   },
+  // ],
 };

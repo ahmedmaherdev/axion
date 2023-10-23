@@ -31,13 +31,14 @@ module.exports = class ApiHandler {
       if (this.managers[mk][this.prop]) {
         // console.log('managers - mk ', this.managers[mk])
         this.methodMatrix[mk] = {};
+        this.httpMethods = this.managers[mk].httpMethods ?? [];
         // console.log(`## ${mk}`);
-        this.managers[mk][this.prop].forEach((i) => {
+        this.managers[mk][this.prop].forEach((fn, index) => {
           /** creating the method matrix */
-          let method = "post";
-          let fnName = i;
-          if (i.includes("=")) {
-            let frags = i.split("=");
+          let method = this.httpMethods[index];
+          let fnName = fn;
+          if (fn.includes("=")) {
+            let frags = fn.split("=");
             method = frags[0];
             fnName = frags[1];
           }

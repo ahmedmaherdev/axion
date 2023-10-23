@@ -1,4 +1,4 @@
-module.exports = class Classrooms {
+module.exports = class Classroom {
   constructor({
     utils,
     cache,
@@ -14,10 +14,17 @@ module.exports = class Classrooms {
     this.mongomodels = mongomodels;
     this.tokenManager = managers.token;
     this.classroomsCollection = "classrooms";
-    this.ClassroomsExposed = ["createClassrooms"];
+    this.httpExposed = [
+      "getAllClassrooms",
+      "getClassroom",
+      "createClassroom",
+      "updateClassroom",
+      "deleteClassroom",
+    ];
+    this.httpMethods = ["get", "get", "post", "patch", "delete"];
   }
 
-  async findAllClassrooms({}) {
+  async getAllClassrooms({}) {
     // Creation Logic
     let classrooms = await this.mongomodels.classroom.find();
 
@@ -27,18 +34,18 @@ module.exports = class Classrooms {
     };
   }
 
-  async findClassrooms({ _id }) {
+  async getClassroom({ _id }) {
     // Creation Logic
-    let classrooms = await this.mongomodels.classroom.findById(_id);
+    let classroom = await this.mongomodels.classroom.findById(_id);
 
     // Response
     return {
-      classrooms,
+      classroom,
     };
   }
 
   async createClassroom({ name, school: schoolId }) {
-    const classroom = { name, school };
+    const classroom = { name, school: schoolId };
 
     // Data validation
     let result = await this.validators.classroom.createClassroom(classroom);
@@ -46,13 +53,13 @@ module.exports = class Classrooms {
 
     const school = await this.mongomodels.school.findById(schoolId);
 
-    if (!school) return;
+    if (!school) return new Error("School is not found");
     // Creation Logic
     let createdClassrooms = await this.mongomodels.classroom.create(classroom);
 
     // Response
     return {
-      Classrooms: createdClassrooms,
+      classrooms: createdClassrooms,
     };
   }
 
@@ -64,9 +71,12 @@ module.exports = class Classrooms {
     if (result) return result;
 
     // Creation Logic
-    let updatedClassroom = await this.mongomodels.classroom.update(
-      _id,
-      classroom
+    let updatedClassroom = await this.mongomodels.classroom.findOneAndUpdate(
+      { _id },
+      classroom,
+      {
+        new: true,
+      }
     );
 
     // Response

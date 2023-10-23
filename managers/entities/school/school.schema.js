@@ -4,10 +4,18 @@ module.exports = {
       model: "name",
       required: true,
     },
+
+    {
+      model: "school",
+      required: true,
+    },
   ],
-  updateStudent: [
+  updateSchool: [
     {
       model: "name",
+    },
+    {
+      model: "school",
     },
   ],
 };
