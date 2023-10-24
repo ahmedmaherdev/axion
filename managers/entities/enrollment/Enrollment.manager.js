@@ -16,6 +16,7 @@ module.exports = class Enrollment {
     this.enrollmentsCollection = "enrollments";
     this.httpExposed = ["createEnrollment", "deleteEnrollment"];
     this.httpMethods = ["post", "delete"];
+    this.cache = cache;
   }
 
   async createEnrollment({ student, classroom }) {
@@ -53,6 +54,11 @@ module.exports = class Enrollment {
     await userData.student.save();
     await classroomData.save();
 
+    await this.cache.key.delete({ key: "allUsers" });
+    await this.cache.key.delete({ key: `user:${userData._id}` });
+
+    await this.cache.key.delete({ key: "allClassrooms" });
+    await this.cache.key.delete({ key: `classroom:${classroomData._id}` });
     // Response
     return {
       enrollment: createdEnrollment,
@@ -60,7 +66,33 @@ module.exports = class Enrollment {
   }
 
   async deleteEnrollment({ _id }) {
+    const enrollment = await this.mongomodels.enrollment.findById(_id);
+
+    if (!enrollment)
+      return {
+        ok: false,
+        code: 404,
+        errors: "Enrollment is not found",
+      };
+
+    const userData = await this.mongomodels.user.findById(enrollment.student);
+    const classroomData = await this.mongomodels.classroom.findById(
+      enrollment.classroom
+    );
+
+    userData.student.classrooms.pull(classroomData._id);
+    classroomData.students.pull(userData._id);
+
+    await userData.student.save();
+    await classroomData.save();
+
     await this.mongomodels.enrollment.deleteOne({ _id });
+
+    await this.cache.key.delete({ key: "allUsers" });
+    await this.cache.key.delete({ key: `user:${userData._id}` });
+
+    await this.cache.key.delete({ key: "allClassrooms" });
+    await this.cache.key.delete({ key: `classroom:${classroomData._id}` });
 
     return {};
   }

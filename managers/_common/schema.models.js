@@ -22,6 +22,17 @@ module.exports = {
     type: "string",
     length: { min: 8, max: 100 },
   },
+
+  newPassword: {
+    path: "password",
+    type: "string",
+    length: { min: 8, max: 100 },
+  },
+  newPasswordConfirm: {
+    path: "password",
+    type: "string",
+    length: { min: 8, max: 100 },
+  },
   // email: {
   //   path: "email",
   //   type: "string",

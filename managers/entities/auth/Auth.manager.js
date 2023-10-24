@@ -14,8 +14,10 @@ module.exports = class Auth {
     this.mongomodels = mongomodels;
     this.tokenManager = managers.token;
     this.usersCollection = "auth";
-    this.httpExposed = ["login", "signup"];
-    this.httpMethods = ["post", "post"];
+    this.httpExposed = ["login", "signup", "updatePassword"];
+    this.httpMethods = ["post", "post", "patch"];
+    this.cache = cache;
+    this.cacheExpired = 3600;
   }
 
   async signup({ username, name, email, password, passwordConfirm, school }) {
@@ -46,6 +48,8 @@ module.exports = class Auth {
 
     createdUser.password = undefined;
     createdUser.__v = undefined;
+
+    await this.cache.key.delete({ key: "allUsers" });
     // Response
     return {
       user: createdUser,
@@ -78,7 +82,58 @@ module.exports = class Auth {
       },
     });
 
+    user.password = undefined;
+    user.__v = undefined;
     // Response
+    return {
+      user,
+      longToken,
+    };
+  }
+
+  async updatePassword({
+    password,
+    newPassword,
+    newPasswordConfirm,
+    __longToken,
+  }) {
+    // Data validation
+    let result = await this.validators.auth.updatePassword({
+      password,
+      newPassword,
+      newPasswordConfirm,
+    });
+    if (result) return result;
+    const userId = __longToken.userId;
+    const user = await this.mongomodels.user
+      .findById(userId)
+      .select("+password +email");
+    const isPasswordCorrect = await user.correctPassword(
+      user.password,
+      password
+    );
+
+    if (!isPasswordCorrect)
+      return {
+        ok: false,
+        code: 400,
+        errors: "The old password is incorrect.",
+      };
+
+    user.password = newPassword;
+    user.passwordConfirm = newPasswordConfirm;
+
+    await user.save();
+
+    let longToken = this.tokenManager.genLongToken({
+      userId: user._id,
+      userKey: {
+        email: user.email,
+        role: user.role,
+      },
+    });
+    user.password = undefined;
+    user.__v = undefined;
     return {
       user,
       longToken,

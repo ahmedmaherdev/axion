@@ -36,12 +36,18 @@ module.exports = {
       required: true,
     },
   ],
-  updateUser: [
-    {
-      model: "email",
-    },
+  updatePassword: [
     {
       model: "password",
+      required: true,
+    },
+    {
+      model: "newPassword",
+      required: true,
+    },
+    {
+      model: "newPasswordConfirm",
+      required: true,
     },
   ],
 };

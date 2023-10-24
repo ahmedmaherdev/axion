@@ -29,10 +29,13 @@ module.exports = class ManagersLoader {
     this.config = config;
     this.cache = cache;
     this.cortex = cortex;
+
+    // for __unAuthorized middleware
     this.managers.unAuthorizedRoutes = {
       post: ["/api/auth/login", "/api/auth/signup"],
     };
 
+    // for __restricted middleware
     this.managers.restrictedRoutes = {
       get: [],
       post: [
