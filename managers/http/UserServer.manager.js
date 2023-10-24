@@ -7,6 +7,7 @@ module.exports = class UserServer {
   constructor({ config, managers }) {
     this.config = config;
     this.userApi = managers.userApi;
+    this.userMethod = managers.user;
   }
 
   /** for injecting middlewares */
@@ -27,6 +28,10 @@ module.exports = class UserServer {
       res.status(500).send("Something broke!");
     });
 
+    app.use((req, res, next) => {
+      req.unAuthRoutes = ["/api/auth"];
+      next();
+    });
     /** a single middleware to handle all */
     app.all("/api/:moduleName/:fnName", this.userApi.mw);
 

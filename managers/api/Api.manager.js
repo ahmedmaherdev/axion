@@ -68,7 +68,8 @@ module.exports = class ApiHandler {
               if (!this.mwsRepo[param]) {
                 throw Error(`Unable to find middleware ${param}`);
               } else {
-                this.mwsStack[`${mk}.${fnName}`].push(param);
+                if (!fnName.startsWith("auth."))
+                  this.mwsStack[`${mk}.${fnName}`].push(param);
               }
             }
           });
@@ -149,7 +150,6 @@ module.exports = class ApiHandler {
     }
 
     // console.log(`${moduleName}.${fnName}`);
-
     let targetStack = this.mwsStack[`${moduleName}.${fnName}`];
 
     let hotBolt = this.mwsExec.createBolt({

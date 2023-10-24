@@ -26,7 +26,7 @@ module.exports = class TokenManager {
   genLongToken({ userId, userKey }) {
     return jwt.sign(
       {
-        userKey,
+        ...userKey,
         userId,
       },
       this.config.dotEnv.LONG_TOKEN_SECRET,

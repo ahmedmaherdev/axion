@@ -17,6 +17,7 @@ const User = require("../managers/entities/user/User.manager");
 const School = require("../managers/entities/school/School.manager");
 const Classroom = require("../managers/entities/classroom/Classroom.manager");
 const Enrollment = require("../managers/entities/enrollment/Enrollment.manager");
+const Auth = require("../managers/entities/auth/Auth.manager");
 
 /**
  * load sharable modules
@@ -70,11 +71,20 @@ module.exports = class ManagersLoader {
     this.managers.token = new TokenManager(this.injectable);
     /*************************************************************************************************/
     this.managers.mwsExec = new VirtualStack({
-      ...{ preStack: [/* '__token', */ "__device"] },
+      ...{ preStack: ["__longToken", "__device"] },
       ...this.injectable,
     });
 
     // Custom managers
+    this.managers.auth = new Auth({
+      utils,
+      cache: this.cache,
+      config: this.config,
+      cortex: this.cortex,
+      managers: this.managers,
+      validators: this.validators,
+      mongomodels: this.mongomodels,
+    });
     this.managers.user = new User({
       utils,
       cache: this.cache,

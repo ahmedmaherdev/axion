@@ -64,7 +64,10 @@ module.exports = class User {
 
     let longToken = this.tokenManager.genLongToken({
       userId: createdUser._id,
-      userKey: createdUser.email,
+      userKey: {
+        email: createdUser.email,
+        role: createdUser.role,
+      },
     });
 
     createdUser.password = undefined;
@@ -103,7 +106,10 @@ module.exports = class User {
 
     let longToken = this.tokenManager.genLongToken({
       userId: createdUser._id,
-      userKey: createdUser.email,
+      userKey: {
+        email: createdUser.email,
+        role: createdUser.role,
+      },
     });
 
     createdUser.password = undefined;
