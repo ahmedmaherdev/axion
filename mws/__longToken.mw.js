@@ -1,11 +1,7 @@
 module.exports = ({ meta, config, managers }) => {
   return ({ req, res, next }) => {
     // skip auth routes
-    if (
-      req.unAuthRoutes &&
-      req.unAuthRoutes.some((route) => req.originalUrl.startsWith(route))
-    )
-      return next();
+    if (req.isAuthorized) return next();
 
     let token = req.headers.authorization;
     if (!token || !token.startsWith("Bearer")) {
@@ -36,6 +32,8 @@ module.exports = ({ meta, config, managers }) => {
         errors: "unauthorized",
       });
     }
+
+    req.user = decoded;
 
     next(decoded);
   };

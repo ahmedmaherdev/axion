@@ -53,7 +53,12 @@ module.exports = class Classroom {
 
     const school = await this.mongomodels.school.findById(schoolId);
 
-    if (!school) return new Error("School is not found");
+    if (!school)
+      return {
+        ok: false,
+        code: 404,
+        errors: "School is not found",
+      };
     // Creation Logic
     let createdClassrooms = await this.mongomodels.classroom.create(classroom);
 
@@ -63,13 +68,21 @@ module.exports = class Classroom {
     };
   }
 
-  async updateClassroom({ _id, name, school }) {
-    const classroom = { name, school };
+  async updateClassroom({ _id, name, school: schoolId }) {
+    const classroom = { name, school: schoolId };
 
     // Data validation
     let result = await this.validators.classroom.updateClassroom(classroom);
     if (result) return result;
 
+    const school = await this.mongomodels.school.findById(schoolId);
+
+    if (!school)
+      return {
+        ok: false,
+        code: 404,
+        errors: "School is not found",
+      };
     // Creation Logic
     let updatedClassroom = await this.mongomodels.classroom.findOneAndUpdate(
       { _id },
