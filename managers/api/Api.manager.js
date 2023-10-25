@@ -1,3 +1,4 @@
+const handleError = require("../../errors/handleError");
 const getParamNames = require("./_common/getParamNames");
 /**
  * scans all managers for exposed methods
@@ -111,8 +112,8 @@ module.exports = class ApiHandler {
     try {
       result = await targetModule[`${fnName}`](data);
     } catch (err) {
-      console.log(`error`, err);
-      result.error = `${fnName} failed to execute`;
+      result = handleError(err) ?? { error: `${fnName} failed to execute` };
+      if (result) console.log(`error`, err);
     }
 
     if (cb) cb(result);
