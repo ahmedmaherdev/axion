@@ -1,24 +1,37 @@
-const hasPermission = (req, config) => {
-  const routeMethod = req.method.toLowerCase();
-  const routePath = req.originalUrl;
-  if (config.routes.restricted[routeMethod]) {
-    const obj = config.routes.restricted[routeMethod].find(
-      (obj) => obj.path === routePath
-    );
-
-    return obj && obj.restrictedTo.includes(req.user.role);
+const findRestricted = (config, method, path) => {
+  if (config.routes.restricted[method]) {
+    return config.routes.restricted[method].find((obj) => obj.path === path);
   }
-  return true;
+  return null;
 };
 
-module.exports = ({ meta, config, managers }) => {
+const hasPermission = (userRole, restrictedObj) => {
+  return restrictedObj && restrictedObj.restrictedTo.includes(userRole);
+};
+
+module.exports = ({ config, managers }) => {
   return ({ req, res, next }) => {
-    if (req.isAuthorized || hasPermission(req, config)) return next();
+    const { method, originalUrl, user } = req;
+    const routeMethod = method.toLowerCase();
+    const routePath = originalUrl;
+
+    const restrictedObj = findRestricted(config, routeMethod, routePath);
+
+    if (
+      // if route don't need an autherization
+      req.isAuthorized ||
+      // if route not has restricted roles
+      !restrictedObj ||
+      // if route has restricted roles
+      hasPermission(user.role, restrictedObj)
+    ) {
+      return next();
+    }
 
     return managers.responseDispatcher.dispatch(res, {
       ok: false,
       code: 403,
-      errors: "you don't have permission to request this route.",
+      errors: "You don't have permission to access this route.",
     });
   };
 };
