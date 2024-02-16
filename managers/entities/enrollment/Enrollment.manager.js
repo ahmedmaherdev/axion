@@ -14,8 +14,7 @@ module.exports = class Enrollment {
     this.mongomodels = mongomodels;
     this.tokenManager = managers.token;
     this.enrollmentsCollection = "enrollments";
-    this.httpExposed = ["createEnrollment", "deleteEnrollment"];
-    this.httpMethods = ["post", "delete"];
+    this.httpExposed = ["post=createEnrollment", "delete=deleteEnrollment"];
     this.cache = cache;
   }
 

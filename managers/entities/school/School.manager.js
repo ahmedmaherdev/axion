@@ -15,15 +15,13 @@ module.exports = class School {
     this.tokenManager = managers.token;
     this.schoolsCollection = "schools";
     this.httpExposed = [
-      "getAllSchools",
-      "getSchool",
-      "createSchool",
-      "updateSchool",
-      "deleteSchool",
+      "get=getAllSchools",
+      "get=getSchool",
+      "post=createSchool",
+      "patch=updateSchool",
+      "delete=deleteSchool",
     ];
-    this.httpMethods = ["get", "get", "post", "patch", "delete"];
     this.cache = cache;
-    this.cacheExpired = 3600;
   }
 
   async getAllSchools({}) {
@@ -41,7 +39,7 @@ module.exports = class School {
     await this.cache.key.set({
       key: cacheKey,
       data: JSON.stringify(schools),
-      ttl: this.cacheExpired,
+      ttl: this.config.REDIS_EXPIRES_IN,
     });
     // Response
     return {
@@ -49,7 +47,14 @@ module.exports = class School {
     };
   }
 
-  async getSchool({ _id }) {
+  async getSchool({ __query }) {
+    const _id = __query._id;
+    if (!_id)
+      return {
+        ok: false,
+        code: 400,
+        errors: "Invalid input data: provide school id as a query parameter.",
+      };
     // Creation Logic
     const cacheKey = `school:${_id}`;
 
@@ -72,7 +77,7 @@ module.exports = class School {
     await this.cache.key.set({
       key: cacheKey,
       data: JSON.stringify(school),
-      ttl: this.cacheExpired,
+      ttl: this.config.REDIS_EXPIRES_IN,
     });
 
     // Response
@@ -99,12 +104,20 @@ module.exports = class School {
     };
   }
 
-  async updateSchool({ _id, name }) {
+  async updateSchool({ __query, name }) {
     const school = { name };
 
     // Data validation
     let result = await this.validators.school.updateSchool(school);
     if (result) return result;
+
+    const _id = __query._id;
+    if (!_id)
+      return {
+        ok: false,
+        code: 400,
+        errors: "Invalid input data: provide school id as a query parameter.",
+      };
 
     // Creation Logic
     let updatedSchool = await this.mongomodels.school.findOneAndUpdate(
@@ -122,7 +135,15 @@ module.exports = class School {
       school: updatedSchool,
     };
   }
-  async deleteSchool({ _id }) {
+  async deleteSchool({ __query }) {
+    const _id = __query._id;
+    if (!_id)
+      return {
+        ok: false,
+        code: 400,
+        errors: "Invalid input data: provide school id as a query parameter.",
+      };
+
     await this.mongomodels.school.deleteOne({ _id });
 
     await this.cache.key.delete({ key: "allSchools" });

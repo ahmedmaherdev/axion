@@ -31,6 +31,10 @@ if (!LONG_TOKEN_SECRET || !SHORT_TOKEN_SECRET || !NACL_SECRET) {
   throw Error("missing .env variables check index.config");
 }
 
+const REDIS_EXPIRES_IN = process.env.REDIS_EXPIRES_IN ?? 3600;
+
+const { restricted, unAuthorized } = require("./routes");
+
 config.dotEnv = {
   SERVICE_NAME,
   ENV,
@@ -47,6 +51,12 @@ config.dotEnv = {
   ADMIN_URL,
   LONG_TOKEN_SECRET,
   SHORT_TOKEN_SECRET,
+  REDIS_EXPIRES_IN,
+};
+
+config.routes = {
+  restricted,
+  unAuthorized,
 };
 
 module.exports = config;

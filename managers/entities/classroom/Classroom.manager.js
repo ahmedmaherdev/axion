@@ -15,15 +15,13 @@ module.exports = class Classroom {
     this.tokenManager = managers.token;
     this.classroomsCollection = "classrooms";
     this.httpExposed = [
-      "getAllClassrooms",
-      "getClassroom",
-      "createClassroom",
-      "updateClassroom",
-      "deleteClassroom",
+      "get=getAllClassrooms",
+      "get=getClassroom",
+      "post=createClassroom",
+      "patch=updateClassroom",
+      "delete=deleteClassroom",
     ];
-    this.httpMethods = ["get", "get", "post", "patch", "delete"];
     this.cache = cache;
-    this.cacheExpired = 3600;
   }
 
   async getAllClassrooms({}) {
@@ -42,7 +40,7 @@ module.exports = class Classroom {
     await this.cache.key.set({
       key: cacheKey,
       data: JSON.stringify(classrooms),
-      ttl: this.cacheExpired,
+      ttl: this.config.REDIS_EXPIRES_IN,
     });
     // Response
     return {
@@ -50,7 +48,16 @@ module.exports = class Classroom {
     };
   }
 
-  async getClassroom({ _id }) {
+  async getClassroom({ __query }) {
+    const _id = __query._id;
+    if (!_id)
+      return {
+        ok: false,
+        code: 400,
+        errors:
+          "Invalid input data: provide classroom id as a query parameter.",
+      };
+
     // Creation Logic
     const cacheKey = `classroom:${_id}`;
 
@@ -73,7 +80,7 @@ module.exports = class Classroom {
     await this.cache.key.set({
       key: cacheKey,
       data: JSON.stringify(classroom),
-      ttl: this.cacheExpired,
+      ttl: this.config.REDIS_EXPIRES_IN,
     });
     // Response
     return {
@@ -107,7 +114,7 @@ module.exports = class Classroom {
     };
   }
 
-  async updateClassroom({ _id, name, school: schoolId }) {
+  async updateClassroom({ __query, name, school: schoolId }) {
     const classroom = { name, school: schoolId };
 
     // Data validation
@@ -125,6 +132,15 @@ module.exports = class Classroom {
         };
     }
 
+    const _id = __query._id;
+    if (!_id)
+      return {
+        ok: false,
+        code: 400,
+        errors:
+          "Invalid input data: provide classroom id as a query parameter.",
+      };
+
     // Creation Logic
     let updatedClassroom = await this.mongomodels.classroom.findOneAndUpdate(
       { _id },
@@ -141,7 +157,16 @@ module.exports = class Classroom {
       classroom: updatedClassroom,
     };
   }
-  async deleteClassroom({ _id }) {
+  async deleteClassroom({ __query }) {
+    const _id = __query._id;
+    if (!_id)
+      return {
+        ok: false,
+        code: 400,
+        errors:
+          "Invalid input data: provide classroom id as a query parameter.",
+      };
+
     await this.mongomodels.classroom.deleteOne({ _id });
 
     await this.cache.key.delete({ key: "allClassrooms" });

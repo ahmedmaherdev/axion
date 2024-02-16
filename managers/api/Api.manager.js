@@ -25,20 +25,18 @@ module.exports = class ApiHandler {
     this.mwsStack = {};
     this.mw = this.mw.bind(this);
 
-    /** filter only the modules that have interceptors */
     // console.log(`# Http API`);
     Object.keys(this.managers).forEach((mk) => {
       if (this.managers[mk][this.prop]) {
         // console.log('managers - mk ', this.managers[mk])
         this.methodMatrix[mk] = {};
-        this.httpMethods = this.managers[mk].httpMethods ?? [];
         // console.log(`## ${mk}`);
-        this.managers[mk][this.prop].forEach((fn, index) => {
+        this.managers[mk][this.prop].forEach((i) => {
           /** creating the method matrix */
-          let method = this.httpMethods[index];
-          let fnName = fn;
-          if (fn.includes("=")) {
-            let frags = fn.split("=");
+          let method = "post";
+          let fnName = i;
+          if (i.includes("=")) {
+            let frags = i.split("=");
             method = frags[0];
             fnName = frags[1];
           }
@@ -68,8 +66,7 @@ module.exports = class ApiHandler {
               if (!this.mwsRepo[param]) {
                 throw Error(`Unable to find middleware ${param}`);
               } else {
-                if (!fnName.startsWith("auth."))
-                  this.mwsStack[`${mk}.${fnName}`].push(param);
+                this.mwsStack[`${mk}.${fnName}`].push(param);
               }
             }
           });

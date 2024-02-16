@@ -14,10 +14,8 @@ module.exports = class Auth {
     this.mongomodels = mongomodels;
     this.tokenManager = managers.token;
     this.usersCollection = "auth";
-    this.httpExposed = ["login", "signup", "updatePassword"];
-    this.httpMethods = ["post", "post", "patch"];
+    this.httpExposed = ["post=login", "post=signup", "patch=updatePassword"];
     this.cache = cache;
-    this.cacheExpired = 3600;
   }
 
   async signup({ username, name, email, password, passwordConfirm, school }) {

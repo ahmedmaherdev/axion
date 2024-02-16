@@ -15,25 +15,15 @@ module.exports = class User {
     this.tokenManager = managers.token;
     this.usersCollection = "users";
     this.httpExposed = [
-      "getAllUsers",
-      "getUser",
-      "getMe",
-      "createUser",
-      "updateUser",
-      "updateMe",
-      "deleteUser",
-    ];
-    this.httpMethods = [
-      "get",
-      "get",
-      "get",
-      "post",
-      "patch",
-      "patch",
-      "delete",
+      "get=getAllUsers",
+      "get=getUser",
+      "get=getMe",
+      "post=createUser",
+      "patch=updateUser",
+      "patch=updateMe",
+      "delete=deleteUser",
     ];
     this.cache = cache;
-    this.cacheExpired = 3600;
   }
 
   async getAllUsers({}) {
@@ -51,7 +41,7 @@ module.exports = class User {
     await this.cache.key.set({
       key: cacheKey,
       data: JSON.stringify(users),
-      ttl: this.cacheExpired,
+      ttl: this.config.REDIS_EXPIRES_IN,
     });
     // Response
     return {
@@ -59,8 +49,15 @@ module.exports = class User {
     };
   }
 
-  async getUser({ _id }) {
+  async getUser({ __query }) {
     // Creation Logic
+    const _id = __query._id;
+    if (!_id)
+      return {
+        ok: false,
+        code: 400,
+        errors: "Invalid input data: provide user id as a query parameter.",
+      };
 
     const cacheKey = `user:${_id}`;
     const cacheData = await this.cache.key.get({ key: cacheKey });
@@ -82,7 +79,7 @@ module.exports = class User {
     await this.cache.key.set({
       key: cacheKey,
       data: JSON.stringify(user),
-      ttl: this.cacheExpired,
+      ttl: this.config.REDIS_EXPIRES_IN,
     });
     // Response
     return {
@@ -114,7 +111,7 @@ module.exports = class User {
     await this.cache.key.set({
       key: cacheKey,
       data: JSON.stringify(user),
-      ttl: this.cacheExpired,
+      ttl: this.config.REDIS_EXPIRES_IN,
     });
     // Response
     return {
@@ -175,21 +172,25 @@ module.exports = class User {
     };
   }
 
-  async updateUser({ _id, username, name, email }) {
+  async updateUser({ __query, username, name, email }) {
     const user = { username, name, email };
 
     // Data validation
     let result = await this.validators.user.updateUser(user);
     if (result) return result;
 
+    const _id = __query._id;
+    if (!_id)
+      return {
+        ok: false,
+        code: 400,
+        errors: "Invalid input data: provide user id as a query parameter.",
+      };
+
     // Creation Logic
-    let updateUser = await this.mongomodels.user.findOneAndUpdate(
-      { _id },
-      user,
-      {
-        new: true,
-      }
-    );
+    let updateUser = await this.mongomodels.user.fi({ _id }, user, {
+      new: true,
+    });
 
     await this.cache.key.delete({ key: "allUsers" });
     await this.cache.key.delete({ key: `user:${updateUser._id}` });
@@ -199,7 +200,15 @@ module.exports = class User {
       user: updateUser,
     };
   }
-  async deleteUser({ _id }) {
+  async deleteUser({ __query }) {
+    const _id = __query._id;
+    if (!_id)
+      return {
+        ok: false,
+        code: 400,
+        errors: "Invalid input data: provide user id as a query parameter.",
+      };
+
     await this.mongomodels.user.deleteOne({ _id });
 
     await this.cache.key.delete({ key: "allUsers" });

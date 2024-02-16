@@ -3,8 +3,8 @@ module.exports = ({ meta, config, managers }) => {
     const routePath = req.originalUrl;
     const routeMethod = req.method.toLowerCase();
     const isAuthorized =
-      managers.unAuthorizedRoutes[routeMethod] &&
-      managers.unAuthorizedRoutes[routeMethod].some(
+      config.routes.unAuthorized[routeMethod] &&
+      config.routes.unAuthorized[routeMethod].some(
         (route) => route === routePath
       );
 
