@@ -21,78 +21,98 @@ module.exports = class Enrollment {
   async createEnrollment({ student, classroom }) {
     const enrollment = { student, classroom };
 
-    // Data validation
-    let result = await this.validators.enrollment.createEnrollment(enrollment);
+    const result = await this.validators.enrollment.createEnrollment(
+      enrollment
+    );
     if (result) return result;
 
-    const userData = await this.mongomodels.user.findById(student);
-    const classroomData = await this.mongomodels.classroom.findById(classroom);
+    const userData = await this._getUserById(student);
+    const classroomData = await this._getClassroomById(classroom);
 
-    if (!userData)
-      return {
-        ok: false,
-        code: 404,
-        errors: `Student is not found`,
-      };
+    if (!userData) {
+      return this._notFoundResponse("Student");
+    }
 
-    if (!classroomData)
-      return {
-        ok: false,
-        code: 404,
-        errors: `Classroom is not found`,
-      };
-    // Creation Logic
+    if (!classroomData) {
+      return this._notFoundResponse("Classroom");
+    }
 
-    let createdEnrollment = await this.mongomodels.enrollment.create(
+    const createdEnrollment = await this.mongomodels.enrollment.create(
       enrollment
     );
 
-    userData.student.classrooms.push(classroom);
-    classroomData.students.push(student);
+    await this._updateUserClassrooms(userData, classroom);
+    await this._updateClassroomStudents(classroomData, student);
+    await this._deleteCacheKeys(userData, classroomData);
 
-    await userData.student.save();
-    await classroomData.save();
-
-    await this.cache.key.delete({ key: "allUsers" });
-    await this.cache.key.delete({ key: `user:${userData._id}` });
-
-    await this.cache.key.delete({ key: "allClassrooms" });
-    await this.cache.key.delete({ key: `classroom:${classroomData._id}` });
-    // Response
-    return {
-      enrollment: createdEnrollment,
-    };
+    return { enrollment: createdEnrollment };
   }
 
-  async deleteEnrollment({ _id }) {
+  async deleteEnrollment({ __query }) {
+    const _id = __query._id;
+
     const enrollment = await this.mongomodels.enrollment.findById(_id);
 
-    if (!enrollment)
-      return {
-        ok: false,
-        code: 404,
-        errors: "Enrollment is not found",
-      };
+    if (!enrollment) {
+      return this._notFoundResponse("Enrollment");
+    }
 
-    const userData = await this.mongomodels.user.findById(enrollment.student);
-    const classroomData = await this.mongomodels.classroom.findById(
-      enrollment.classroom
-    );
+    const userData = await this._getUserById(enrollment.student);
+    const classroomData = await this._getClassroomById(enrollment.classroom);
 
-    userData.student.classrooms.pull(classroomData._id);
-    classroomData.students.pull(userData._id);
-
-    await userData.student.save();
-    await classroomData.save();
+    this._removeUserFromClassrooms(userData, classroomData);
+    this._removeClassroomFromStudents(classroomData, userData);
 
     await this.mongomodels.enrollment.deleteOne({ _id });
+    await this._deleteCacheKeys(userData, classroomData);
 
-    await this.cache.key.delete({ key: "allUsers" });
-    await this.cache.key.delete({ key: `user:${userData._id}` });
+    return { ok: true, code: 200 };
+  }
 
-    await this.cache.key.delete({ key: "allClassrooms" });
-    await this.cache.key.delete({ key: `classroom:${classroomData._id}` });
+  async _getUserById(userId) {
+    return userId ? await this.mongomodels.user.findById(userId) : null;
+  }
 
-    return {};
+  async _getClassroomById(classroomId) {
+    return classroomId
+      ? await this.mongomodels.classroom.findById(classroomId)
+      : null;
+  }
+
+  async _updateUserClassrooms(userData, classroomId) {
+    userData.student.classrooms.push(classroomId);
+    await userData.student.save();
+  }
+
+  async _updateClassroomStudents(classroomData, userId) {
+    classroomData.students.push(userId);
+    await classroomData.save();
+  }
+
+  _removeUserFromClassrooms(userData, classroomData) {
+    userData.student.classrooms.pull(classroomData._id);
+    userData.student.save();
+  }
+
+  _removeClassroomFromStudents(classroomData, userData) {
+    classroomData.students.pull(userData._id);
+    classroomData.save();
+  }
+
+  async _deleteCacheKeys(userData, classroomData) {
+    await Promise.all([
+      this.cache.key.delete({ key: "allUsers" }),
+      this.cache.key.delete({ key: `user:${userData._id}` }),
+      this.cache.key.delete({ key: "allClassrooms" }),
+      this.cache.key.delete({ key: `classroom:${classroomData._id}` }),
+    ]);
+  }
+
+  _notFoundResponse(entity) {
+    return {
+      ok: false,
+      code: 404,
+      errors: `${entity} is not found.`,
+    };
   }
 };

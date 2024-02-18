@@ -10,11 +10,11 @@ const restricted = {
     },
     {
       path: "/api/classroom/createClassroom",
-      restrictedTo: ["admin"],
+      restrictedTo: ["admin", "superAdmin"],
     },
     {
       path: "/api/enrollment/createEnrollment",
-      restrictedTo: ["admin"],
+      restrictedTo: ["admin", "superAdmin"],
     },
   ],
   patch: [

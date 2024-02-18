@@ -6,6 +6,9 @@ const schoolSchema = new Schema(
       type: String,
     },
 
+    location: {
+      type: String,
+    },
   },
   { timestamps: true }
 );

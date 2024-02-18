@@ -24,154 +24,148 @@ module.exports = class Classroom {
     this.cache = cache;
   }
 
-  async getAllClassrooms({}) {
-    // Creation Logic
+  async getAllClassrooms() {
     const cacheKey = `allClassrooms`;
+    const cacheData = await this._getCacheData(cacheKey);
 
-    const cacheData = await this.cache.key.get({ key: cacheKey });
+    if (cacheData) {
+      return { classrooms: cacheData };
+    }
 
-    if (cacheData)
-      return {
-        classrooms: JSON.parse(cacheData),
-      };
+    const classrooms = await this.mongomodels.classroom.find();
+    await this._setCacheData(cacheKey, classrooms);
 
-    let classrooms = await this.mongomodels.classroom.find();
-
-    await this.cache.key.set({
-      key: cacheKey,
-      data: JSON.stringify(classrooms),
-      ttl: this.config.REDIS_EXPIRES_IN,
-    });
-    // Response
-    return {
-      classrooms,
-    };
+    return { classrooms };
   }
 
   async getClassroom({ __query }) {
     const _id = __query._id;
-    if (!_id)
-      return {
-        ok: false,
-        code: 400,
-        errors:
-          "Invalid input data: provide classroom id as a query parameter.",
-      };
+    if (!this._isValidId(_id)) {
+      return this._invalidInputResponse();
+    }
 
-    // Creation Logic
     const cacheKey = `classroom:${_id}`;
+    const cacheData = await this._getCacheData(cacheKey);
 
-    const cacheData = await this.cache.key.get({ key: cacheKey });
+    if (cacheData) {
+      return { classroom: cacheData };
+    }
 
-    if (cacheData)
-      return {
-        classroom: JSON.parse(cacheData),
-      };
+    const classroom = await this.mongomodels.classroom.findById(_id);
 
-    let classroom = await this.mongomodels.classroom.findById(_id);
+    if (!classroom) {
+      return this._notFoundResponse("Classroom");
+    }
 
-    if (!classroom)
-      return {
-        ok: false,
-        code: 404,
-        errors: "Classroom is not found.",
-      };
-
-    await this.cache.key.set({
-      key: cacheKey,
-      data: JSON.stringify(classroom),
-      ttl: this.config.REDIS_EXPIRES_IN,
-    });
-    // Response
-    return {
-      classroom,
-    };
+    await this._setCacheData(cacheKey, classroom);
+    return { classroom };
   }
 
   async createClassroom({ name, school: schoolId }) {
     const classroom = { name, school: schoolId };
 
-    // Data validation
-    let result = await this.validators.classroom.createClassroom(classroom);
+    const result = await this.validators.classroom.createClassroom(classroom);
     if (result) return result;
 
-    const school = await this.mongomodels.school.findById(schoolId);
+    const school = await this._getSchoolById(schoolId);
 
-    if (!school)
-      return {
-        ok: false,
-        code: 404,
-        errors: "School is not found",
-      };
-    // Creation Logic
-    let createdClassroom = await this.mongomodels.classroom.create(classroom);
+    if (!school) {
+      return this._notFoundResponse("School");
+    }
 
-    await this.cache.key.delete({ key: "allClassrooms" });
-    await this.cache.key.delete({ key: `classroom:${createdClassroom._id}` });
-    // Response
-    return {
-      classrooms: createdClassroom,
-    };
+    const createdClassroom = await this.mongomodels.classroom.create(classroom);
+    await this._deleteCacheKey("allClassrooms");
+
+    return { classrooms: createdClassroom };
   }
 
   async updateClassroom({ __query, name, school: schoolId }) {
     const classroom = { name, school: schoolId };
+    const result = await this.validators.classroom.updateClassroom(classroom);
 
-    // Data validation
-    let result = await this.validators.classroom.updateClassroom(classroom);
     if (result) return result;
 
-    let school = schoolId;
-    if (school) {
-      school = await this.mongomodels.school.findById(schoolId);
-      if (!school)
-        return {
-          ok: false,
-          code: 404,
-          errors: "School is not found",
-        };
+    const school = schoolId ? await this._getSchoolById(schoolId) : null;
+
+    if (!school) {
+      return this._notFoundResponse("School");
     }
 
     const _id = __query._id;
-    if (!_id)
-      return {
-        ok: false,
-        code: 400,
-        errors:
-          "Invalid input data: provide classroom id as a query parameter.",
-      };
+    if (!this._isValidId(_id)) {
+      return this._invalidInputResponse();
+    }
 
-    // Creation Logic
-    let updatedClassroom = await this.mongomodels.classroom.findOneAndUpdate(
+    const updatedClassroom = await this.mongomodels.classroom.findOneAndUpdate(
       { _id },
       classroom,
-      {
-        new: true,
-      }
+      { new: true }
     );
 
-    await this.cache.key.delete({ key: "allClassrooms" });
-    await this.cache.key.delete({ key: `classroom:${updatedClassroom._id}` });
-    // Response
-    return {
-      classroom: updatedClassroom,
-    };
+    if (!updatedClassroom) return this._notFoundResponse("Classroom");
+
+    await Promise.all([
+      this._deleteCacheKey("allClassrooms"),
+      this._deleteCacheKey(`classroom:${_id}`),
+    ]);
+
+    return { classroom: updatedClassroom };
   }
+
   async deleteClassroom({ __query }) {
     const _id = __query._id;
-    if (!_id)
-      return {
-        ok: false,
-        code: 400,
-        errors:
-          "Invalid input data: provide classroom id as a query parameter.",
-      };
+    if (!this._isValidId(_id)) {
+      return this._invalidInputResponse();
+    }
 
     await this.mongomodels.classroom.deleteOne({ _id });
 
-    await this.cache.key.delete({ key: "allClassrooms" });
-    await this.cache.key.delete({ key: `classroom:${_id}` });
+    await Promise.all([
+      this._deleteCacheKey("allClassrooms"),
+      this._deleteCacheKey(`classroom:${_id}`),
+    ]);
 
-    return {};
+    return { ok: true, code: 200 };
+  }
+
+  async _getCacheData(key) {
+    const cacheData = await this.cache.key.get({ key });
+    return cacheData ? JSON.parse(cacheData) : null;
+  }
+
+  async _setCacheData(key, data) {
+    await this.cache.key.set({
+      key,
+      data: JSON.stringify(data),
+      ttl: this.config.REDIS_EXPIRES_IN,
+    });
+  }
+
+  async _deleteCacheKey(key) {
+    this.cache.key.delete({ key });
+  }
+
+  async _getSchoolById(schoolId) {
+    return schoolId ? await this.mongomodels.school.findById(schoolId) : null;
+  }
+
+  _isValidId(id) {
+    return !!id;
+  }
+
+  _invalidInputResponse() {
+    return {
+      ok: false,
+      code: 400,
+      errors: "Invalid input data: provide classroom id as a query parameter.",
+    };
+  }
+
+  _notFoundResponse(entity) {
+    return {
+      ok: false,
+      code: 404,
+      errors: `${entity} is not found.`,
+    };
   }
 };

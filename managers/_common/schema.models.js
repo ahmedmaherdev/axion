@@ -147,4 +147,9 @@ module.exports = {
     type: "string",
     length: { min: 3, max: 10 },
   },
+  location: {
+    path: "location",
+    type: "string",
+    length: { min: 3, max: 20 },
+  },
 };

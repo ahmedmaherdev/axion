@@ -14,7 +14,7 @@ const classroomSchema = new Schema(
     students: [
       {
         type: Types.ObjectId,
-        ref: "Student",
+        ref: "User",
       },
     ],
   },
@@ -34,6 +34,7 @@ classroomSchema.pre(/^find/, function (next) {
       select: {
         name: 1,
         photo: 1,
+        student: 0,
       },
     });
 
