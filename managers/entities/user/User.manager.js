@@ -26,15 +26,20 @@ module.exports = class User {
     this.cache = cache;
   }
 
-  async getAllUsers() {
-    const cacheKey = "allUsers";
+  async getAllUsers({ __query }) {
+    const { page, limit, sort, skip } = this.utils.splitQuery(__query);
+    const cacheKey = `allUsers:${page}:${limit}:${JSON.stringify(sort)}`;
     const cacheData = await this._getCacheData(cacheKey);
 
     if (cacheData) {
       return { users: cacheData };
     }
 
-    const users = await this.mongomodels.user.find();
+    const users = await this.mongomodels.user
+      .find()
+      .skip(skip)
+      .limit(limit)
+      .sort(sort);
     await this._setCacheData(cacheKey, users);
 
     return { users };

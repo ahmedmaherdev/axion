@@ -25,14 +25,19 @@ module.exports = class School {
   }
 
   async getAllSchools() {
-    const cacheKey = "allSchools";
+    const { page, limit, sort, skip } = this.utils.splitQuery(__query);
+    const cacheKey = `allSchools:${page}:${limit}:${JSON.stringify(sort)}`;
     const cacheData = await this._getCacheData(cacheKey);
 
     if (cacheData) {
       return { schools: cacheData };
     }
 
-    const schools = await this.mongomodels.school.find();
+    const schools = await this.mongomodels.school
+      .find()
+      .skip(skip)
+      .limit(limit)
+      .sort(sort);
     await this._setCacheData(cacheKey, schools);
 
     return { schools };
@@ -61,12 +66,13 @@ module.exports = class School {
     return { school };
   }
 
-  async createSchool({ name, location }) {
+  async createSchool({ __longToken, name, location }) {
     const school = { name, location };
 
     const result = await this.validators.school.createSchool(school);
     if (result) return result;
 
+    school.createdBy = __longToken.userId;
     const createdSchool = await this.mongomodels.school.create(school);
 
     await this._deleteCacheKeys(createdSchool);

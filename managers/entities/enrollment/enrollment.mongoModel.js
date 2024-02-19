@@ -11,6 +11,11 @@ const enrollmentSchema = new Schema(
       type: Types.ObjectId,
       ref: "Classroom",
     },
+
+    createdBy: {
+      type: Types.ObjectId,
+      ref: "User",
+    },
   },
   { timestamps: true }
 );

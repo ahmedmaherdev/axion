@@ -1,4 +1,4 @@
-const { Schema, model } = require("mongoose");
+const { Schema, model, Types } = require("mongoose");
 
 const schoolSchema = new Schema(
   {
@@ -8,6 +8,11 @@ const schoolSchema = new Schema(
 
     location: {
       type: String,
+    },
+
+    createdBy: {
+      type: Types.ObjectId,
+      ref: "User",
     },
   },
   { timestamps: true }

@@ -8,6 +8,7 @@ module.exports = class Classroom {
     validators,
     mongomodels,
   } = {}) {
+    this.utils = utils;
     this.config = config;
     this.cortex = cortex;
     this.validators = validators;
@@ -24,15 +25,21 @@ module.exports = class Classroom {
     this.cache = cache;
   }
 
-  async getAllClassrooms() {
-    const cacheKey = `allClassrooms`;
+  async getAllClassrooms({ __query }) {
+    const { page, limit, sort, skip } = this.utils.splitQuery(__query);
+    const cacheKey = `allClassrooms:${page}:${limit}:${JSON.stringify(sort)}`;
     const cacheData = await this._getCacheData(cacheKey);
 
     if (cacheData) {
       return { classrooms: cacheData };
     }
 
-    const classrooms = await this.mongomodels.classroom.find();
+    const classrooms = await this.mongomodels.classroom
+      .find()
+      .skip(skip)
+      .limit(limit)
+      .sort(sort);
+
     await this._setCacheData(cacheKey, classrooms);
 
     return { classrooms };
@@ -61,7 +68,7 @@ module.exports = class Classroom {
     return { classroom };
   }
 
-  async createClassroom({ name, school: schoolId }) {
+  async createClassroom({ __longToken, name, school: schoolId }) {
     const classroom = { name, school: schoolId };
 
     const result = await this.validators.classroom.createClassroom(classroom);
@@ -73,6 +80,7 @@ module.exports = class Classroom {
       return this._notFoundResponse("School");
     }
 
+    classroom.createdBy = __longToken.userId;
     const createdClassroom = await this.mongomodels.classroom.create(classroom);
     await this._deleteCacheKey("allClassrooms");
 

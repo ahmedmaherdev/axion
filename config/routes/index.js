@@ -10,11 +10,11 @@ const restricted = {
     },
     {
       path: "/api/classroom/createClassroom",
-      restrictedTo: ["admin", "superAdmin"],
+      restrictedTo: ["admin"],
     },
     {
       path: "/api/enrollment/createEnrollment",
-      restrictedTo: ["admin", "superAdmin"],
+      restrictedTo: ["admin"],
     },
   ],
   patch: [
@@ -52,7 +52,12 @@ const restricted = {
 };
 
 const unAuthorized = {
-  post: ["/api/auth/login", "/api/auth/signup"],
+  post: [
+    "/api/auth/login",
+    "/api/auth/signup",
+    "/api/school/getAllSchools",
+    "/api/school/getSchool",
+  ],
 };
 
 module.exports = { restricted, unAuthorized };

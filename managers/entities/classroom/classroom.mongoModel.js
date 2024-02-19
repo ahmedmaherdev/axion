@@ -17,6 +17,11 @@ const classroomSchema = new Schema(
         ref: "User",
       },
     ],
+
+    createdBy: {
+      type: Types.ObjectId,
+      ref: "User",
+    },
   },
   { timestamps: true }
 );

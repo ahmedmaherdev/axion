@@ -18,7 +18,7 @@ module.exports = class Enrollment {
     this.cache = cache;
   }
 
-  async createEnrollment({ student, classroom }) {
+  async createEnrollment({ __longToken, student, classroom }) {
     const enrollment = { student, classroom };
 
     const result = await this.validators.enrollment.createEnrollment(
@@ -36,6 +36,8 @@ module.exports = class Enrollment {
     if (!classroomData) {
       return this._notFoundResponse("Classroom");
     }
+
+    enrollment.createdBy = __longToken.userId;
 
     const createdEnrollment = await this.mongomodels.enrollment.create(
       enrollment
