@@ -29,7 +29,6 @@ module.exports = class Auth {
     let createdUser = await this.mongomodels.user.create(user);
 
     let student = await this.mongomodels.student.create({
-      student: createdUser._id,
       school,
     });
 

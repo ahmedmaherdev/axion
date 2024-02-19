@@ -8,6 +8,7 @@ module.exports = class School {
     validators,
     mongomodels,
   } = {}) {
+    this.utils = utils;
     this.config = config;
     this.cortex = cortex;
     this.validators = validators;
@@ -24,7 +25,7 @@ module.exports = class School {
     this.cache = cache;
   }
 
-  async getAllSchools() {
+  async getAllSchools({ __query }) {
     const { page, limit, sort, skip } = this.utils.splitQuery(__query);
     const cacheKey = `allSchools:${page}:${limit}:${JSON.stringify(sort)}`;
     const cacheData = await this._getCacheData(cacheKey);

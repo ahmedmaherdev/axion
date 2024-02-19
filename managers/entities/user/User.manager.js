@@ -8,6 +8,7 @@ module.exports = class User {
     validators,
     mongomodels,
   } = {}) {
+    this.utils = utils;
     this.config = config;
     this.cortex = cortex;
     this.validators = validators;

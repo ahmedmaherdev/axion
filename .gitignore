@@ -92,3 +92,8 @@ sw.*
 # vscode
 .vscode/
 
+# data
+data
+
+# local script
+localScript.js

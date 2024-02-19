@@ -140,7 +140,7 @@ const splitQuery = (__query) => {
   const limit = __query.limit ?? 10;
   const skip = (page - 1) * limit;
   const sort = {};
-  const sortBy = __query.sort.split(",");
+  const sortBy = __query.sort ? __query.sort.split(",") : ["createdAt"];
   for (const field of sortBy) {
     field.startsWith("-") ? (sort[field.slice(1)] = -1) : (sort[field] = 1);
   }
