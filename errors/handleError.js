@@ -2,7 +2,7 @@ const handleCastErrorDB = (err) => {
   const message = `Invalid ${err.path}: ${err.value}`;
   return {
     code: 400,
-    error: message,
+    errors: message,
   };
 };
 
@@ -12,7 +12,7 @@ const handleDuplicateFieldsDB = (err) => {
   )}. Please use another value`;
   return {
     code: 400,
-    error: message,
+    errors: message,
   };
 };
 
@@ -22,21 +22,21 @@ const handleValidationErrorDB = (err) => {
   const message = `Invalid input data. ${errors.join(". ")}`;
   return {
     code: 400,
-    error: message,
+    errors: message,
   };
 };
 
 const handleJWTError = () => {
   return {
     code: 401,
-    error: "Invalid token! Please log in again.",
+    errors: "Invalid token! Please log in again.",
   };
 };
 
 const handleJWTExpiredError = () => {
   return {
     code: 401,
-    error: "Invalid token! Please log in again.",
+    errors: "Invalid token! Please log in again.",
   };
 };
 
